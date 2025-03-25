@@ -39,7 +39,7 @@ export type PatchRequest<Body = {}, Params = {}> = { params: Params, reply: (cod
 export type SecureGetRequest<Params = {}, Querystring = {}> = GetRequest<Params, Querystring> & SessionRequest;
 export type SecurePostRequest<Body = {}, Params = {}, Querystring = {}> = PostRequest<Body, Params, Querystring> & SessionRequest;
 
-export async function securify() {
+export async function secludify() {
     // Generate RSA key pair at startup
     const { publicKey, privateKey, secret } = getKeys('keys.json');
 
