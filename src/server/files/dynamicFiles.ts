@@ -38,7 +38,7 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                 route: requestUrl,
             };
             const currentFile: FileData = (options.locationHandler && options.locationHandler(file)) ?? file;
-            const unknownMetas = loadMetadata<{ hidden: boolean }>(currentFile.location, { hidden: false }, options.metaext);
+            const unknownMetas = loadMetadata<{ hidden: boolean }>(currentFile.location, { hidden: false, }, options.metaext);
             if(unknownMetas.hidden) {
                 return rep.code(404).send({ message: `Route GET:${req.originalUrl} not found`, error: "Not Found" });
             }
@@ -62,6 +62,9 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                     return rep.code(200).type(currentFile.contentType).send(fs.createReadStream(currentFile.location));
                 } else if (stats.isDirectory()) {
                     const directoryMeta: LocationDirectoryMeta = unknownMetas;
+                    if(directoryMeta.unlinkIndex === true) {
+                        return rep.code(404).send({ message: `Route GET:${req.originalUrl} not found`, error: "Not Found" });
+                    }
                     const possibleIndexHTML = path.join(currentFile.location, "index.html");
                     const possibleIndexMD = path.join(currentFile.location, "index.md");
                     if(fs.existsSync(possibleIndexHTML)) {
@@ -92,15 +95,13 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                                 const currentLocation = findLocationInTreeRoute(currentFile.location, tree);
                                 if(currentLocation) {
                                     const indexContent = `# ${currentLocation.name}\r\n\r\n## Index\r\n\r\n`;
-                                    const host = req.headers.host;
-                                    const protocol = req.protocol || 'http';
                                     const dirname = path.dirname(currentFile.route);
                                     const pageLinks: string[] = [];
                                     if(!currentLocation.isRoot) {
-                                        pageLinks.push(`- [..](${protocol}://${host}${dirname})`);
+                                        pageLinks.push(`- [..](${dirname})`);
                                     }
                                     for(const item of (currentLocation as LocationDirectory).content) {
-                                        pageLinks.push(`- [${path.basename(item.path)}](${protocol}://${host}${item.relativePath})`);
+                                        pageLinks.push(`- [${path.basename(item.path)}](${item.relativePath})`);
                                     }
                                     return rep.code(200).type("text/html").send(await generateHTMLFromMarkdown(`${indexContent}${pageLinks.join("\r\n")}`, fs.readFileSync(options.templateLocation, { encoding: "utf-8" }), "Index", options));
                                 }
@@ -128,9 +129,9 @@ type LocationFileMeta = Partial<{
     file: LocationMetaFileAttachment,
     hidden: boolean,
 }>;
-
 type LocationDirectoryMeta = Partial<{
     title: string,
     indexed: boolean,
     hidden: boolean,
-}>
+    unlinkIndex: boolean,
+}>;
