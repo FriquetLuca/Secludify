@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Secure Fetch with Dynamic Key Exchange</title>
+</head>
+<body>
+    <h1>Secure Fetch with Key Exchange</h1>
+    <button onclick="startSession()">Start Secure Session</button>
+    <button onclick="sendSecureData()" disabled id="sendButton">Send Encrypted Data</button>
+    <pre id="output"></pre>
+
+    <script>
+        let sessionKey = null; // AES session key
+
+        async function fetchServerPublicKey() {
+            const response = await fetch('/securekey');
+            const { publicKey } = await response.json();
+            return publicKey;
+        }
+
+        async function generateSessionKey() {
+            sessionKey = await crypto.subtle.generateKey(
+                { name: "AES-GCM", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        async function encryptSessionKey(publicKeyPem) {
+            const algo = { name: "RSA-OAEP", hash: "SHA-256" };
+            const publicKey = await crypto.subtle.importKey(
+                'spki',
+                convertPemToBinary(publicKeyPem),
+                algo,
+                false,
+                ["encrypt"]
+            );
+            const rawKey = await crypto.subtle.exportKey("raw", sessionKey);
+            const encryptedKey = await crypto.subtle.encrypt(
+                algo,
+                publicKey,
+                rawKey
+            );
+            return btoa(String.fromCharCode(...new Uint8Array(encryptedKey)));
+        }
+
+        async function startSession() {
+            const publicKeyPem = await fetchServerPublicKey();
+            await generateSessionKey();
+            const encryptedKey = await encryptSessionKey(publicKeyPem);
+            const body = JSON.stringify({ encryptedKey });
+            const response = await fetch('/exchange-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ encryptedKey })
+            });
+
+            if (response.ok) {
+                document.getElementById('sendButton').disabled = false;
+                alert('Session established!');
+            }
+        }
+
+        async function encryptData(plaintext, sessionKey) {
+
+            // Generate a random IV (AES-GCM standard uses a 12-byte IV)
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+
+            // Encode the plaintext to bytes (UTF-8 encoding)
+            const encoded = new TextEncoder().encode(plaintext);
+
+            // Perform AES-GCM encryption using the session key
+            const encrypted = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                sessionKey, // sessionKey is already derived/obtained
+                encoded
+            );
+
+            const cipher = new Uint8Array(encrypted);
+            const authTag = cipher.slice(-16);  // Last 16 bytes are the auth tag
+            const cipherText = cipher.slice(0, cipher.length - 16); // The actual ciphertext
+
+            return {
+                iv: btoa(String.fromCharCode(...iv)),
+                cipher: btoa(String.fromCharCode(...cipherText)),
+                authTag: btoa(String.fromCharCode(...authTag)), // Include the auth tag
+            };
+        }
+
+        async function decryptData(encryptedData, sessionKey) {
+            const { iv, cipher, authTag } = encryptedData;
+
+            // Decode the Base64-encoded strings into their binary equivalents (Uint8Array)
+            const decodedIv = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
+            const decodedCipher = Uint8Array.from(atob(cipher), c => c.charCodeAt(0));
+            const decodedAuthTag = Uint8Array.from(atob(authTag), c => c.charCodeAt(0));
+
+            // Combine the cipher text and auth tag into one Uint8Array
+            const cipherWithAuthTag = new Uint8Array(decodedCipher.length + decodedAuthTag.length);
+            cipherWithAuthTag.set(decodedCipher);
+            cipherWithAuthTag.set(decodedAuthTag, decodedCipher.length);
+
+            try {
+                // Decrypt the data using crypto.subtle.decrypt
+                const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: decodedIv }, sessionKey, cipherWithAuthTag);
+
+                // Decode the decrypted data to string
+                const result = new TextDecoder().decode(decrypted);
+
+                return result; // Return the decrypted text
+            } catch (error) {
+                console.error('Decryption failed:', error);
+                throw new Error('Failed to decrypt the data');
+            }
+        }
+        
+        async function sendSecureData() {
+            const plaintext = {
+                hello: "Hello, secure world!",
+            };
+            const encryptedData = await encryptData(JSON.stringify(plaintext), sessionKey);
+
+            const response = await fetch('/secure-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(encryptedData)
+            });
+
+            const responseData = await response.json();
+            const decryptedResponse = await decryptData(responseData, sessionKey);
+
+            document.getElementById('output').innerText = decryptedResponse;
+        }
+
+        function convertPemToBinary(pem) {
+            const base64String = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+            const binaryString = atob(base64String);
+            return Uint8Array.from(binaryString, c => c.charCodeAt(0)).buffer;
+        }
+    </script>
+</body>
+</html>
