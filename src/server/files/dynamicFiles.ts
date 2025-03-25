@@ -8,7 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Transform } from 'stream';
 import { type MaybePromise } from '../../functional';
 import { type EmojiRecord } from '../../markdown';
-import { generateHTMLFromMarkdown, generateHTMLFromMarkdownFile, loadTemplate } from './generateHTMLFromMarkdown';
+import { generateHTMLFromMarkdown, generateHTMLFromMarkdownFile } from './generateHTMLFromMarkdown';
 import { findLocationInTreeRoute } from './findRelativeInTree';
 
 export type DynamicFileOption = {
@@ -102,7 +102,7 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                                     for(const item of (currentLocation as LocationDirectory).content) {
                                         pageLinks.push(`- [${path.basename(item.path)}](${protocol}://${host}${item.relativePath})`);
                                     }
-                                    return rep.code(200).type("text/html").send(await generateHTMLFromMarkdown(`${indexContent}${pageLinks.join("\r\n")}`, loadTemplate(options.templateLocation), "Index", options));
+                                    return rep.code(200).type("text/html").send(await generateHTMLFromMarkdown(`${indexContent}${pageLinks.join("\r\n")}`, fs.readFileSync(options.templateLocation, { encoding: "utf-8" }), "Index", options));
                                 }
                             }
                             return rep.code(500).send({ message: `Error 500 - Internal Server Error`, error: "Internal Server Error" });
