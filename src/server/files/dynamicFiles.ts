@@ -10,6 +10,7 @@ import { type MaybePromise } from '../../functional';
 import { type EmojiRecord } from '../../markdown';
 import { generateHTMLFromMarkdown, generateHTMLFromMarkdownFile } from './generateHTMLFromMarkdown';
 import { findLocationInTreeRoute } from './findRelativeInTree';
+import { sortLocationTree } from './sortLocationTree';
 
 export type DynamicFileOption = {
     location: string,
@@ -96,8 +97,9 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                                     return content.endsWith("/") || content.endsWith("\\") ? removeTrailingSlashes(content.substring(0, content.length - 1)) : content;
                                 };
                                 const fileLocation = removeTrailingSlashes(currentFile.location);
-                                const currentLocation = findLocationInTreeRoute(fileLocation, tree);
-                                if(currentLocation) {
+                                const currentLoc = findLocationInTreeRoute(fileLocation, tree);
+                                if(currentLoc) {
+                                    const currentLocation = sortLocationTree(currentLoc);
                                     const indexContent = `# ${currentLocation.name}\r\n\r\n## Index\r\n\r\n`;
                                     const dirname = path.dirname(currentFile.route);
                                     const pageLinks: string[] = [];
