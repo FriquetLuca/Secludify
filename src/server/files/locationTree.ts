@@ -79,7 +79,7 @@ export function locationTree(location: string, opts: LocationTreeOptions = { }):
       return {
         type: "directory",
         contentType: "text/html",
-        isRoot: options.prefix === undefined,
+        isRoot: options.isRoot,
         path: location,
         relativePath: pref.replace(backslashRegexp, "/"),
         name: dirName,
@@ -107,7 +107,7 @@ export function locationTree(location: string, opts: LocationTreeOptions = { }):
       return {
         type: "file",
         contentType: CONTENT_TYPE[extension as keyof typeof CONTENT_TYPE] ?? "text/text",
-        isRoot: options.prefix === undefined,
+        isRoot: options.isRoot,
         path: location,
         relativePath: path.join(options.prefix ?? "/", fileName).replace(backslashRegexp, "/"),
         name,

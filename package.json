@@ -1,6 +1,6 @@
 {
     "name": "secludify",
-    "version": "0.0.11",
+    "version": "0.0.12",
     "description": "A fastify wrapper for secure HTTP without HTTPS",
     "license": "ISC",
     "author": "Friquet Luca",
