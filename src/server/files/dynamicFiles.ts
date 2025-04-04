@@ -18,7 +18,7 @@ export type DynamicFileOption = {
     emojis?: Record<string, EmojiRecord>,
     prefix?: string,
     metaext?: string,
-    disableDefaultIndexing?: string,
+    disableDefaultIndexing?: boolean,
     locationHandler?: (file: FileData) => FileData,
     fileHandler?: (file: FileData) => MaybePromise<fs.ReadStream | ServerResponse<IncomingMessage> | Transform | string | Buffer>,
 };
