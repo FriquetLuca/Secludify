@@ -1,6 +1,6 @@
 {
     "name": "secludify",
-    "version": "0.0.5",
+    "version": "0.0.8",
     "description": "A fastify wrapper for secure HTTP without HTTPS",
     "license": "ISC",
     "author": "Friquet Luca",
@@ -13,8 +13,8 @@
     },
     "devDependencies": {
         "@types/katex": "^0.16.7",
-        "@types/node": "^22.13.13",
-        "@types/ws": "^8.18.0",
+        "@types/node": "^22.14.0",
+        "@types/ws": "^8.18.1",
         "ts-node": "^10.9.2",
         "typescript": "^5.8.2"
     },
@@ -24,7 +24,7 @@
         "@fastify/static": "^8.1.1",
         "@fastify/websocket": "^11.0.2",
         "chokidar": "^4.0.3",
-        "fastify": "^5.2.1",
+        "fastify": "^5.2.2",
         "generate-api-key": "^1.0.2",
         "katex": "^0.16.21",
         "marked": "^15.0.7"

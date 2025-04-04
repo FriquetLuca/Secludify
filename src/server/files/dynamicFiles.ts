@@ -88,11 +88,16 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                         }
                         return rep.code(200).type("text/html").send(await generateHTMLFromMarkdownFile(possibleIndexMD, fileMeta.title ?? "Index", options));
                     } else {
+                        console.log("No index found");
                         if(directoryMeta.indexed ?? !(options.disableDefaultIndexing ?? false)) {
                             // Create an index for the directory since it's indexed
                             const tree = locationTree(options.location, { prefix });
                             if(tree) {
-                                const currentLocation = findLocationInTreeRoute(currentFile.location, tree);
+                                const removeTrailingSlashes = (content: string): string => {
+                                    return content.endsWith("/") ? removeTrailingSlashes(content.substring(0, content.length - 1)) : content;
+                                };
+                                const fileLocation = removeTrailingSlashes(currentFile.location);
+                                const currentLocation = findLocationInTreeRoute(fileLocation, tree);
                                 if(currentLocation) {
                                     const indexContent = `# ${currentLocation.name}\r\n\r\n## Index\r\n\r\n`;
                                     const dirname = path.dirname(currentFile.route);
@@ -103,6 +108,7 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                                     for(const item of (currentLocation as LocationDirectory).content) {
                                         pageLinks.push(`- [${path.basename(item.path)}](${item.relativePath})`);
                                     }
+                                    console.log("Template location", options.templateLocation);
                                     return rep.code(200).type("text/html").send(await generateHTMLFromMarkdown(`${indexContent}${pageLinks.join("\r\n")}`, fs.readFileSync(options.templateLocation, { encoding: "utf-8" }), "Index", options));
                                 }
                             }
