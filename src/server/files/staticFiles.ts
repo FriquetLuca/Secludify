@@ -40,7 +40,7 @@ export function createStaticFileRoute(fastify: FastifyInstance, file: FileData, 
         return;
     }
     if(fs.existsSync(file.location) && fs.statSync(file.location).isFile()) {
-        fastify.get(encodeURIComponent(file.route), async (_, rep) => {
+        fastify.get(file.route, async (_, rep) => {
             if(file.disposition) {
                 if(file.disposition === "attachment" && file.filename) {
                     rep.header('Content-Disposition', `attachment; filename="${file.filename}"`);

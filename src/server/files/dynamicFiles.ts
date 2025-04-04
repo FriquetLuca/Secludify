@@ -102,10 +102,10 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                                     const dirname = path.dirname(currentFile.route);
                                     const pageLinks: string[] = [];
                                     if(!currentLocation.isRoot) {
-                                        pageLinks.push(`- <a href="${encodeURIComponent(dirname)}">..</a>`);
+                                        pageLinks.push(`- <a href="${dirname}">..</a>`);
                                     }
                                     for(const item of (currentLocation as LocationDirectory).content) {
-                                        pageLinks.push(`- <a href="${encodeURIComponent(item.relativePath)}">${path.basename(item.path)}</a>`);
+                                        pageLinks.push(`- <a href="${item.relativePath}">${path.basename(item.path)}</a>`);
                                     }
                                     return rep.code(200).type("text/html").send(await generateHTMLFromMarkdown(`${indexContent}${pageLinks.join("\r\n")}`, fs.readFileSync(options.templateLocation, { encoding: "utf-8" }), "Index", options));
                                 }
