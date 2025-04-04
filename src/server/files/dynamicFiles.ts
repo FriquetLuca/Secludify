@@ -88,13 +88,12 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                         }
                         return rep.code(200).type("text/html").send(await generateHTMLFromMarkdownFile(possibleIndexMD, fileMeta.title ?? "Index", options));
                     } else {
-                        console.log("No index found");
                         if(directoryMeta.indexed ?? !(options.disableDefaultIndexing ?? false)) {
                             // Create an index for the directory since it's indexed
                             const tree = locationTree(options.location, { prefix });
                             if(tree) {
                                 const removeTrailingSlashes = (content: string): string => {
-                                    return content.endsWith("/") ? removeTrailingSlashes(content.substring(0, content.length - 1)) : content;
+                                    return content.endsWith("/") || content.endsWith("\\") ? removeTrailingSlashes(content.substring(0, content.length - 1)) : content;
                                 };
                                 const fileLocation = removeTrailingSlashes(currentFile.location);
                                 const currentLocation = findLocationInTreeRoute(fileLocation, tree);
@@ -103,12 +102,11 @@ export function dynamicFiles(fastify: FastifyInstance, options: DynamicFileOptio
                                     const dirname = path.dirname(currentFile.route);
                                     const pageLinks: string[] = [];
                                     if(!currentLocation.isRoot) {
-                                        pageLinks.push(`- [..](${dirname})`);
+                                        pageLinks.push(`- <a href="${dirname}">..</a>`);
                                     }
                                     for(const item of (currentLocation as LocationDirectory).content) {
-                                        pageLinks.push(`- [${path.basename(item.path)}](${item.relativePath})`);
+                                        pageLinks.push(`- <a href="${item.relativePath}">${path.basename(item.path)}</a>`);
                                     }
-                                    console.log("Template location", options.templateLocation);
                                     return rep.code(200).type("text/html").send(await generateHTMLFromMarkdown(`${indexContent}${pageLinks.join("\r\n")}`, fs.readFileSync(options.templateLocation, { encoding: "utf-8" }), "Index", options));
                                 }
                             }
